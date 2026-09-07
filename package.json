@@ -1,0 +1,12 @@
+{
+  "name": "taskflow",
+  "private": true,
+  "type": "module",
+  "workspaces": ["backend"],
+  "scripts": {
+    "dev": "npm run dev --workspace @taskflow/backend",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": { "node": ">=22" }
+}

@@ -1,0 +1,34 @@
+git config --global user.name "doomy"
+git config --global user.email "mjnet78@gmail.com"   # 커밋에 박제되는 값
+git config --global init.defaultBranch main
+git config --global pull.rebase true # pull 시 병합 커밋 만들기
+git config --list --show-origin # 어느 파일의ㅣ 설정인지까지
+
+
+git init. -- 평평한폴더 TO Git의 관리를 받는 똑똑한 폴더가 되는거지
+git remote add origin https://github.com/jephari78/repo.git.  -- 내폴덩 <--> 클라우드 금고 디지털 악수(연결)
+
+그 순간 프로젝트 전체의 스냅샷을 저장 함.
+.git/objects
+  > blob   : 파일의 내용, 파일 이름, 경로, 권한도 들어 있지 않습니다. 오직 바이트 덩어리
+  > tree   : 디렉토리 하나. 이름 + 권한 + 해시 목록이며, 각 항목은 blob(파일)이거나 다른 tree(하위 디렉토리)를 가리킵니다.
+  > commit : 최상위 tree 하나 + 부모 커밋(0개는 최초 커밋, 2개 이상은 병합 커밋) + 작성자 / 커미터 / 시가 + 메시지
+  > tag.   : 특정 객체에 붙는 이름표, 메시지와 서명을 담을 수 있다.
+
+핵심워크 플로우
+
+working directory 내책상(작업공간)
+-- 매일 반복하는 3박자 로틴 (add, commit, push) --
+
+git add . -- 수정파일 -> 장바구니
+git commit -m "feat: 어쩌구저쩌구..."   --- 박스밀봉 + 메모
+git push origin main.  --- 클라우드로 배송 : 로컬 박스를 Github 금고로 업로드
+
+.gitignore -- 무시목록의 마법
+
+복구
+git reset
+git branch -- 평행우주 실험실
+git branch feature/login (새 브런치 만들기)
+git checkout feature/login (그 쪽으로 이동)
+git merge feature/login (메인과 합치기)
