@@ -122,4 +122,11 @@ const user = db.select().from(users).where(eq(users.email, email)).get()   // aw
 
 ## Git
 
-아직 Git 저장소가 아닙니다 (`git init` 미실행). 루트 `.gitignore`는 작성되어 있습니다.
+원격은 `github.com/jephari78/taskflow` (public), `origin`은 SSH입니다.
+
+- **이 네트워크는 SSH 22번 포트가 막혀 있습니다.** `~/.ssh/config`가 `github.com`을
+  `ssh.github.com:443`으로 넘기도록 설정되어 있어 `git@github.com:...` 주소를 그대로 쓰면 됩니다.
+  푸시가 `Operation timed out`으로 죽으면 이 설정이 사라졌는지 먼저 확인하세요.
+- **커밋은 SSH 키로 자동 서명됩니다** (전역 `commit.gpgsign=true`, `gpg.format=ssh`).
+  서명을 건너뛰려면 `--no-gpg-sign`을 붙입니다.
+- 초기 4개 커밋은 서명 설정 이전이라 서명이 없습니다.
