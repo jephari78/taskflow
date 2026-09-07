@@ -6,7 +6,7 @@ git config --list --show-origin # 어느 파일의ㅣ 설정인지까지
 
 
 git init. -- 평평한폴더 TO Git의 관리를 받는 똑똑한 폴더가 되는거지
-git remote add origin https://github.com/jephari78/repo.git.  -- 내폴덩 <--> 클라우드 금고 디지털 악수(연결)
+git remote add origin https://github.com/jephari78/taskflow.  -- 내폴덩 <--> 클라우드 금고 디지털 악수(연결)
 
 그 순간 프로젝트 전체의 스냅샷을 저장 함.
 .git/objects
