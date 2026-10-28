@@ -1,7 +1,62 @@
+import { useEffect, useState } from 'react'
+import { api, type User } from './api'
+import { AuthForm } from './auth/AuthForm'
+import { tokenStore } from './auth/token'
+
+type Session = { status: 'checking' } | { status: 'guest' } | { status: 'user'; user: User }
+
 export function App() {
+  // 토큰이 없으면 확인할 것도 없으니 바로 로그인 폼을 보여준다.
+  const [session, setSession] = useState<Session>(() =>
+    tokenStore.get() ? { status: 'checking' } : { status: 'guest' },
+  )
+
+  // 새로고침 후 저장된 토큰이 아직 유효한지 /api/auth/me로 확인한다.
+  useEffect(() => {
+    const token = tokenStore.get()
+    if (!token) return
+    let cancelled = false
+    api
+      .me(token)
+      .then((user) => !cancelled && setSession({ status: 'user', user }))
+      .catch(() => {
+        if (cancelled) return
+        tokenStore.clear()
+        setSession({ status: 'guest' })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  function handleLoggedIn(token: string, user: User) {
+    tokenStore.set(token)
+    setSession({ status: 'user', user })
+  }
+
+  function handleLogout() {
+    tokenStore.clear()
+    setSession({ status: 'guest' })
+  }
+
   return (
-    <main className="mx-auto max-w-xl p-6">
-      <h1 className="text-3xl font-bold text-slate-900">TaskFlow</h1>
+    <main className="mx-auto min-h-screen max-w-md px-4 py-12">
+      <h1 className="mb-8 text-center text-3xl font-bold text-slate-900">TaskFlow</h1>
+
+      {session.status === 'checking' && <p className="text-center text-slate-500">확인 중…</p>}
+      {session.status === 'guest' && <AuthForm onLoggedIn={handleLoggedIn} />}
+      {session.status === 'user' && (
+        <section className="rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200">
+          <p className="mb-6 text-lg text-slate-800">{session.user.email} 님, 환영합니다</p>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+          >
+            로그아웃
+          </button>
+        </section>
+      )}
     </main>
   )
 }

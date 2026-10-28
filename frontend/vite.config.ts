@@ -15,5 +15,8 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['tests/**/*.test.{ts,tsx}'],
     setupFiles: ['./tests/setup.ts'],
+    // 테스트마다 vi.stubGlobal('fetch', ...)과 mock 상태를 원래대로 되돌린다.
+    unstubGlobals: true,
+    restoreMocks: true,
   },
 })

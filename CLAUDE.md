@@ -4,12 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트
 
-TaskFlow — TDD 기반 할 일 관리 앱. npm workspaces 모노레포입니다. backend는 인증·할 일 API까지 동작하고, frontend는 셋업만 된 상태입니다.
+TaskFlow — TDD 기반 할 일 관리 앱. npm workspaces 모노레포입니다. backend는 인증·할 일 API까지 동작하고, frontend는 로그인·회원가입 화면까지 있습니다.
 
 | 워크스페이스 | 상태 | 스택 |
 |---|---|---|
 | `backend/` | 동작함 | Node + Hono + Drizzle ORM + better-sqlite3 + Zod, Vitest |
-| `frontend/` | 셋업 완료 (화면은 제목뿐) | React 19 + Vite 8 + Tailwind 4, Vitest + Testing Library |
+| `frontend/` | 로그인·회원가입 화면 (할 일 화면 미구현) | React 19 + Vite 8 + Tailwind 4, Vitest + Testing Library |
 | `e2e/` | 미구현 (빈 디렉터리) | Playwright 예정 |
 
 e2e는 아직 `package.json`이 없고 루트 `workspaces` 배열에도 없습니다. 셋업할 때 배열에 추가하세요.
@@ -125,6 +125,12 @@ const user = db.select().from(users).where(eq(users.email, email)).get()   // aw
 - 테스트는 `tests/**/*.test.{ts,tsx}`, 환경은 jsdom입니다. `tests/setup.ts`가 jest-dom matcher
   (`toBeInTheDocument` 등)를 등록합니다. 요소는 `getByRole`로 찾습니다.
 - 컴포넌트는 named export(`export function App`)를 씁니다.
+- API 호출은 `src/api.ts`의 `api.*`만 씁니다. backend 에러 코드를 한국어 메시지로 바꾼 `ApiError`를 던지며,
+  네트워크 실패는 `status: 0, code: 'NetworkError'`입니다. 새 에러 코드는 `MESSAGES`에 추가하세요.
+- 토큰은 `src/auth/token.ts`의 `tokenStore`(localStorage `taskflow.token`)로만 다룹니다.
+  `App`이 시작할 때 저장된 토큰을 `/api/auth/me`로 확인하고, 실패하면 지웁니다.
+- 테스트는 실제 backend 없이 `tests/helpers/fetch.ts`의 `mockFetch({ 'POST /api/auth/login': { status, body } })`로
+  응답을 정합니다. 정하지 않은 요청은 에러를 던집니다. `unstubGlobals`가 켜져 있어 테스트마다 원복됩니다.
 
 ## 작업 방식: TDD
 
