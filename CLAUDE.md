@@ -10,9 +10,8 @@ TaskFlow — TDD 기반 할 일 관리 앱. npm workspaces 모노레포입니다
 |---|---|---|
 | `backend/` | 동작함 | Node + Hono + Drizzle ORM + better-sqlite3 + Zod, Vitest |
 | `frontend/` | 로그인·회원가입, 할 일 목록(추가·완료·삭제) | React 19 + Vite 8 + Tailwind 4, Vitest + Testing Library |
-| `e2e/` | 미구현 (빈 디렉터리) | Playwright 예정 |
+| `e2e/` | 전체 흐름 5개 시나리오 | Playwright (Chromium) |
 
-e2e는 아직 `package.json`이 없고 루트 `workspaces` 배열에도 없습니다. 셋업할 때 배열에 추가하세요.
 
 ### 런타임이 Node인 이유
 
@@ -38,6 +37,11 @@ npm run dev:frontend                                 # vite, http://localhost:51
 npm test           --workspace @taskflow/frontend   # vitest run (jsdom)
 npm run build      --workspace @taskflow/frontend   # tsc --noEmit && vite build
 
+npm run test:e2e                                     # playwright test (서버를 직접 띄움)
+cd e2e && npx playwright test --ui                   # UI 모드
+cd e2e && npx playwright show-report                 # 실패 시 스크린샷·trace 확인
+cd e2e && npx playwright install chromium            # 새 머신에서 1회
+
 # 단일 테스트
 cd backend && npx vitest run tests/auth.test.ts
 cd backend && npx vitest run -t '이미 등록된 이메일'   # 테스트 이름으로 필터
@@ -49,7 +53,7 @@ npm run db:migrate  --workspace @taskflow/backend   # 마이그레이션 적용
 npm run db:studio   --workspace @taskflow/backend
 ```
 
-`npm test`(루트)는 워크스페이스 전체를 순회합니다.
+`npm test`(루트)는 backend·frontend 단위 테스트만 돕니다. e2e는 브라우저가 필요해 `test:e2e`로 분리했습니다.
 
 ## backend 아키텍처
 
@@ -134,6 +138,16 @@ const user = db.select().from(users).where(eq(users.email, email)).get()   // aw
 - 로그인 상태가 되는 테스트는 `GET /api/tasks` 응답도 `mockFetch`에 정해 둬야 합니다.
 - 테스트는 실제 backend 없이 `tests/helpers/fetch.ts`의 `mockFetch({ 'POST /api/auth/login': { status, body } })`로
   응답을 정합니다. 정하지 않은 요청은 에러를 던집니다. `unstubGlobals`가 켜져 있어 테스트마다 원복됩니다.
+
+## e2e 아키텍처
+
+- `playwright.config.ts`의 `webServer`가 **backend(3100, `:memory:` DB)와 frontend(5180)를 따로 띄웁니다.**
+  개발 서버(3000/5173)를 켜 둔 채로 돌려도 충돌하지 않고, 매 실행이 빈 DB에서 시작하며 `taskflow.db`를 건드리지 않습니다.
+  frontend 프록시 대상은 `API_URL` 환경 변수로 바꿉니다(`vite.config.ts`).
+- 메모리 DB는 실행 동안 공유되므로 테스트끼리 `uniqueEmail()`로 이메일을 겹치지 않게 합니다(`fullyParallel`).
+- 화면은 서버 응답 후에야 체크박스를 바꾸므로 **`check()` 대신 `click()` 후 `toBeChecked()`로 기다립니다.**
+  `check()`는 클릭 직후 상태가 안 바뀌면 실패합니다.
+- 두 사용자는 `browser.newContext()`로 나눕니다(localStorage 분리).
 
 ## 작업 방식: TDD
 

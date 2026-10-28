@@ -4,13 +4,15 @@
   "type": "module",
   "workspaces": [
     "backend",
-    "frontend"
+    "frontend",
+    "e2e"
   ],
   "scripts": {
     "dev": "npm run dev --workspace @taskflow/backend",
     "dev:frontend": "npm run dev --workspace @taskflow/frontend",
     "test": "npm run test --workspaces --if-present",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test:e2e": "npm run e2e --workspace @taskflow/e2e"
   },
   "engines": {
     "node": ">=22"
