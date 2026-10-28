@@ -2,11 +2,17 @@
   "name": "taskflow",
   "private": true,
   "type": "module",
-  "workspaces": ["backend"],
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
   "scripts": {
     "dev": "npm run dev --workspace @taskflow/backend",
+    "dev:frontend": "npm run dev --workspace @taskflow/frontend",
     "test": "npm run test --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=22"
+  }
 }

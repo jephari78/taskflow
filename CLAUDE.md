@@ -4,15 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 프로젝트
 
-TaskFlow — TDD 기반 할 일 관리 앱. npm workspaces 모노레포이며 **현재 backend만 구현되어 있습니다.**
+TaskFlow — TDD 기반 할 일 관리 앱. npm workspaces 모노레포입니다. backend는 인증·할 일 API까지 동작하고, frontend는 셋업만 된 상태입니다.
 
 | 워크스페이스 | 상태 | 스택 |
 |---|---|---|
 | `backend/` | 동작함 | Node + Hono + Drizzle ORM + better-sqlite3 + Zod, Vitest |
-| `frontend/` | 미구현 (`tests/` 디렉터리만 존재) | React + Vite + TailwindCSS 예정 |
+| `frontend/` | 셋업 완료 (화면은 제목뿐) | React 19 + Vite 8 + Tailwind 4, Vitest + Testing Library |
 | `e2e/` | 미구현 (빈 디렉터리) | Playwright 예정 |
 
-frontend·e2e는 아직 `package.json`이 없고 루트 `workspaces` 배열에도 없습니다. 셋업할 때 배열에 추가하세요.
+e2e는 아직 `package.json`이 없고 루트 `workspaces` 배열에도 없습니다. 셋업할 때 배열에 추가하세요.
 
 ### 런타임이 Node인 이유
 
@@ -33,6 +33,10 @@ npm install                                   # 루트에서 1회
 npm run dev        --workspace @taskflow/backend   # tsx watch, http://localhost:3000 (backend/.env를 읽음, JWT_SECRET 필수)
 npm test           --workspace @taskflow/backend   # vitest run
 npm run typecheck  --workspace @taskflow/backend   # tsc --noEmit
+
+npm run dev:frontend                                 # vite, http://localhost:5173 (/api → 3000 프록시)
+npm test           --workspace @taskflow/frontend   # vitest run (jsdom)
+npm run build      --workspace @taskflow/frontend   # tsc --noEmit && vite build
 
 # 단일 테스트
 cd backend && npx vitest run tests/auth.test.ts
@@ -111,6 +115,17 @@ Promise가 남아 조용히 깨집니다.
 const user = db.select().from(users).where(eq(users.email, email)).get()   // await 없음
 ```
 
+## frontend 아키텍처
+
+- `vite.config.ts` 하나가 빌드와 테스트 설정을 함께 가집니다(`vitest/config`의 `defineConfig`).
+  별도 `vitest.config.ts`를 만들면 플러그인 설정이 갈라지니 만들지 마세요.
+- 개발 서버는 `/api`를 `http://localhost:3000`으로 프록시합니다. 프론트 코드는 **상대 경로 `/api/...`로만**
+  호출하세요 — 같은 출처라 backend에 CORS 설정이 필요 없습니다. backend를 함께 띄워야 합니다.
+- Tailwind 4는 설정 파일이 없습니다. `@tailwindcss/vite` 플러그인과 `src/index.css`의 `@import "tailwindcss"`가 전부입니다.
+- 테스트는 `tests/**/*.test.{ts,tsx}`, 환경은 jsdom입니다. `tests/setup.ts`가 jest-dom matcher
+  (`toBeInTheDocument` 등)를 등록합니다. 요소는 `getByRole`로 찾습니다.
+- 컴포넌트는 named export(`export function App`)를 씁니다.
+
 ## 작업 방식: TDD
 
 프로젝트 이름이 곧 규칙입니다. 기능 요청을 받으면 구현부터 쓰지 말고:
@@ -123,7 +138,7 @@ const user = db.select().from(users).where(eq(users.email, email)).get()   // aw
 
 - Vitest `globals: true` — `describe`/`it`/`expect`/`beforeEach`를 **import 없이** 씁니다 (`vitest.config.ts`).
   타입은 tsconfig의 `types: ["vitest/globals"]`가 담당합니다.
-- 파일 첫 줄에 경로 주석: `// backend/tests/auth.test.ts`
+- 파일 첫 줄에 경로 주석: `// backend/tests/auth.test.ts`, `// frontend/tests/App.test.tsx`
 - `describe` 이름은 대상 엔드포인트 그대로: `POST /api/auth/register`
 - 테스트 이름은 한국어 서술형: `'이미 등록된 이메일이면 409를 반환한다'`
 - 상태 코드뿐 아니라 **DB에 실제로 무엇이 남았는지**까지 검증합니다 (예: 실패 요청이 사용자를 만들지 않는지)
