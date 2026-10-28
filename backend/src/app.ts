@@ -1,6 +1,7 @@
 import { Hono } from 'hono'
 import type { Db } from './db/client'
 import { authRoutes } from './routes/auth'
+import { taskRoutes } from './routes/tasks'
 
 export type AppOptions = {
   /** JWT 서명 키. 생략하면 JWT_SECRET 환경 변수를 쓴다. */
@@ -16,6 +17,7 @@ export function createApp(db: Db, { jwtSecret = process.env.JWT_SECRET }: AppOpt
 
   app.get('/health', (c) => c.json({ status: 'ok' }))
   app.route('/api/auth', authRoutes(db, { jwtSecret }))
+  app.route('/api/tasks', taskRoutes(db, { jwtSecret }))
 
   return app
 }

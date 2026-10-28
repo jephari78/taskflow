@@ -75,6 +75,7 @@ Zod 검증은 `zValidator`를 직접 쓰지 말고 `validate('json', schema)` �
 409 → { error: 'EmailAlreadyRegistered' }
 401 → { error: 'InvalidCredentials' }   # 로그인 실패. 비밀번호 오류와 없는 이메일을 구분하지 않음
 401 → { error: 'Unauthorized' }         # requireAuth 실패
+404 → { error: 'TaskNotFound' }         # 없거나 남의 할 일
 ```
 
 `issues[].path`는 Zod의 배열 경로를 `.`으로 join한 문자열입니다.
@@ -130,7 +131,16 @@ const user = db.select().from(users).where(eq(users.email, email)).get()   // aw
 ## 도메인
 
 `src/db/schema.ts`에 `users`와 `tasks`가 있습니다. `tasks.userId`는 `users.id`를 `onDelete: 'cascade'`로
-참조하며 `foreign_keys = ON` pragma가 켜져 있습니다. **`tasks` 라우트는 아직 없습니다** — 스키마만 준비된 상태입니다.
+참조하며 `foreign_keys = ON` pragma가 켜져 있습니다.
+
+`src/routes/tasks.ts`가 `/api/tasks` CRUD를 제공하며 라우터 전체에 `requireAuth`가 걸려 있습니다.
+
+- **모든 쿼리를 `id`와 `userId`로 함께 거릅니다**(`owned()`). 다른 사용자의 할 일은 403이 아니라
+  `404 { error: 'TaskNotFound' }` — 존재 여부 자체를 숨깁니다.
+- 소유자는 항상 `c.var.userId`(토큰)에서 정합니다. Zod `z.object`가 본문의 `userId` 같은 모르는 키를 버립니다.
+- 응답 컬럼은 `id, title, done, createdAt` — `userId`는 내보내지 않습니다.
+- 목록은 `createdAt, rowid` 순입니다(같은 ms에 생성돼도 삽입 순서 유지).
+- 테스트 헬퍼 `tests/helpers/auth.ts`의 `signUp(app, email)`이 가입+로그인 후 `{ token, userId }`를 돌려줍니다.
 
 ## Git
 
