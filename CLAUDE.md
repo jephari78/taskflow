@@ -30,7 +30,7 @@ Bun을 검토했으나 두 가지 이유로 Node로 확정했습니다. 되돌�
 ```bash
 npm install                                   # 루트에서 1회
 
-npm run dev        --workspace @taskflow/backend   # tsx watch, http://localhost:3000
+npm run dev        --workspace @taskflow/backend   # tsx watch, http://localhost:3000 (backend/.env를 읽음, JWT_SECRET 필수)
 npm test           --workspace @taskflow/backend   # vitest run
 npm run typecheck  --workspace @taskflow/backend   # tsc --noEmit
 
@@ -51,9 +51,9 @@ npm run db:studio   --workspace @taskflow/backend
 
 여러 파일을 읽어야 파악되는 부분만 적습니다.
 
-### DB 주입 — `createApp(db)`
+### DB 주입 — `createApp(db, options)`
 
-`src/app.ts`의 `createApp(db)`는 **서버를 띄우지 않고 Hono 인스턴스만 돌려줍니다.** 서버 기동(`serve`)은
+`src/app.ts`의 `createApp(db, { jwtSecret? })`는 **서버를 띄우지 않고 Hono 인스턴스만 돌려줍니다.** 서버 기동(`serve`)은
 `src/index.ts`에만 있습니다. 이 분리 덕분에 테스트는 포트도 mock도 없이 `app.request('/api/...')`로
 실제 라우터를 그대로 호출합니다.
 
@@ -61,7 +61,9 @@ npm run db:studio   --workspace @taskflow/backend
 `':memory:'`를 넘겨 **케이스마다 완전히 격리된 새 DB**를 만들고 마이그레이션까지 적용합니다.
 
 새 라우트를 추가할 때 이 구조를 깨지 마세요 — 모듈 최상위에서 DB를 import하는 싱글턴을 만들면
-테스트 격리가 무너집니다. 라우트 팩토리는 `authRoutes(db)`처럼 `db`를 받아 `Hono`를 반환합니다.
+테스트 격리가 무너집니다. 라우트 팩토리는 `authRoutes(db, { jwtSecret })`처럼 의존성을 인자로 받아 `Hono`를 반환합니다.
+JWT 서명 키도 같은 방식입니다. 테스트는 `createApp(db, { jwtSecret: 'test-secret' })`로 넘기고,
+생략하면 `process.env.JWT_SECRET`을 씁니다. `src/index.ts`는 키가 없으면 기동을 거부합니다.
 
 ### 검증 계약 — `src/lib/validate.ts`
 
@@ -71,6 +73,8 @@ Zod 검증은 `zValidator`를 직접 쓰지 말고 `validate('json', schema)` �
 ```
 400 → { error: 'ValidationError', issues: [{ path: 'email', message: '...' }] }
 409 → { error: 'EmailAlreadyRegistered' }
+401 → { error: 'InvalidCredentials' }   # 로그인 실패. 비밀번호 오류와 없는 이메일을 구분하지 않음
+401 → { error: 'Unauthorized' }         # requireAuth 실패
 ```
 
 `issues[].path`는 Zod의 배열 경로를 `.`으로 join한 문자열입니다.
@@ -82,6 +86,14 @@ Zod 검증은 `zValidator`를 직접 쓰지 말고 `validate('json', schema)` �
 
 **응답에서 `passwordHash`를 지우는 방식으로 막지 마세요.** 라우트는 `.returning({ id, email, createdAt })`로
 내보낼 컬럼만 명시적으로 고릅니다 — 해시가 새어 나갈 경로 자체를 없애는 방식입니다.
+
+### 인증 — `POST /api/auth/login`
+
+`hono/jwt`로 HS256 토큰(`sub` = 사용자 id, 7일 만료)을 발급합니다. 추가 의존성은 없습니다.
+없는 이메일에도 더미 해시로 scrypt를 돌려 응답 시간으로 가입 여부가 드러나지 않게 합니다.
+보호할 라우트에는 `src/middleware/auth.ts`의 `requireAuth(db, jwtSecret)`를 붙입니다.
+`Authorization: Bearer <JWT>`를 검증해 `c.var.userId`를 채우며(타입은 `AuthEnv`), 서명 불일치·만료·`sub` 누락·
+삭제된 사용자는 모두 `401 { error: 'Unauthorized' }`로 막습니다. 예시는 `GET /api/auth/me`.
 
 ### 마이그레이션
 
