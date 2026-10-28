@@ -13,15 +13,18 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@hono/node-server": "^2.1.5",
     "@hono/zod-validator": "^0.9.1",
-    "better-sqlite3": "^13.0.3"
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.45.4",
+    "hono": "^4.13.14",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
     "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^26.4.1",
     "drizzle-kit": "^0.31.10",
-    "drizzle-orm": "^0.45.2",
+    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.0"
   }
