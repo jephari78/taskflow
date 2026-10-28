@@ -6,6 +6,7 @@ import { bodyOf, headersOf, mockFetch } from './helpers/fetch'
 
 const TOKEN_KEY = 'taskflow.token'
 const loginOk = { status: 200, body: { token: 'jwt-token', user: { id: 'u1', email: 'alice@example.com' } } }
+const noTasks = { 'GET /api/tasks': { status: 200, body: [] } }
 const meOk = { status: 200, body: { id: 'u1', email: 'alice@example.com', createdAt: '2026-01-01T00:00:00.000Z' } }
 
 beforeEach(() => localStorage.clear())
@@ -29,7 +30,7 @@ describe('로그인 화면', () => {
   })
 
   it('로그인에 성공하면 토큰을 저장하고 환영 메시지를 보여준다', async () => {
-    const fetch = mockFetch({ 'POST /api/auth/login': loginOk })
+    const fetch = mockFetch({ 'POST /api/auth/login': loginOk, ...noTasks })
     render(<App />)
 
     await fillAndSubmit('alice@example.com', 'correct-horse', '로그인')
@@ -107,6 +108,7 @@ describe('회원가입 화면', () => {
     const fetch = mockFetch({
       'POST /api/auth/register': { status: 201, body: { id: 'u1', email: 'alice@example.com' } },
       'POST /api/auth/login': loginOk,
+      ...noTasks,
     })
     await openRegister()
 
@@ -158,7 +160,7 @@ describe('회원가입 화면', () => {
 describe('로그인 상태 유지와 로그아웃', () => {
   it('저장된 토큰이 유효하면 새로고침 후에도 로그인 상태를 유지한다', async () => {
     localStorage.setItem(TOKEN_KEY, 'saved-token')
-    const fetch = mockFetch({ 'GET /api/auth/me': meOk })
+    const fetch = mockFetch({ 'GET /api/auth/me': meOk, ...noTasks })
 
     render(<App />)
 
@@ -178,7 +180,7 @@ describe('로그인 상태 유지와 로그아웃', () => {
 
   it('로그아웃하면 토큰을 지우고 로그인 폼으로 돌아간다', async () => {
     localStorage.setItem(TOKEN_KEY, 'saved-token')
-    mockFetch({ 'GET /api/auth/me': meOk })
+    mockFetch({ 'GET /api/auth/me': meOk, ...noTasks })
     render(<App />)
 
     await userEvent.setup().click(await screen.findByRole('button', { name: '로그아웃' }))

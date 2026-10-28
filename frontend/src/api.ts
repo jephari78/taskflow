@@ -1,4 +1,5 @@
 export type User = { id: string; email: string }
+export type Task = { id: string; title: string; done: boolean; createdAt: string }
 
 type ErrorBody = { error?: string; issues?: { path: string; message: string }[] }
 
@@ -17,6 +18,7 @@ const MESSAGES: Record<string, string> = {
   InvalidCredentials: '이메일 또는 비밀번호가 올바르지 않습니다',
   EmailAlreadyRegistered: '이미 가입된 이메일입니다',
   Unauthorized: '다시 로그인해 주세요',
+  TaskNotFound: '할 일을 찾을 수 없습니다',
 }
 
 function messageFor(body: ErrorBody | null): string {
@@ -50,4 +52,11 @@ export const api = {
   login: (email: string, password: string) =>
     request<{ token: string; user: User }>('POST', '/api/auth/login', { body: { email, password } }),
   me: (token: string) => request<User>('GET', '/api/auth/me', { token }),
+
+  listTasks: (token: string) => request<Task[]>('GET', '/api/tasks', { token }),
+  createTask: (token: string, title: string) => request<Task>('POST', '/api/tasks', { token, body: { title } }),
+  updateTask: (token: string, id: string, patch: Partial<Pick<Task, 'title' | 'done'>>) =>
+    request<Task>('PATCH', `/api/tasks/${encodeURIComponent(id)}`, { token, body: patch }),
+  deleteTask: (token: string, id: string) =>
+    request<null>('DELETE', `/api/tasks/${encodeURIComponent(id)}`, { token }),
 }
